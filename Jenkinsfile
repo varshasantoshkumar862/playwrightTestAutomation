@@ -8,7 +8,7 @@ Pipeline Stages:
 2. Install Dependencies: Installs project dependencies using npm ci.
 3. Install Playwright Browsers & Dependencies: Installs Playwright browsers and copies the .env.example file to .env if it doesn't exist.
 4. Run Playwright Tests: Executes the selected Playwright test suite with the specified browser and mode (headless or headed).
-5. Post Actions: Archives test reports, publishes JUnit and Allure reports, and cleans up allure-results on success.
+5. Post Actions: Archives the Playwright, JUnit, and Allure results and publishes the HTML and Allure reports.
 6. Email Notification: Sends an email notification with the build status and links to the reports.
 7. Parameters: Allows users to select the test suite, browser, and mode for the test execution.
 
@@ -74,24 +74,16 @@ pipeline {
   }
   post {
     always {
-      archiveArtifacts artifacts: 'reports/**,custom-report/**,allure-results/**', allowEmptyArchive: true
-      junit testResults: 'reports/results.xml', allowEmptyResults: true
+      archiveArtifacts artifacts: 'playwright-report/**,test-results/**,allure-results/**', allowEmptyArchive: true
+      junit testResults: 'test-results/junit.xml', allowEmptyResults: true
       allure includeProperties: false, results: [[path: 'allure-results']]
       publishHTML([
         allowMissing: true,
         alwaysLinkToLastBuild: true,
         keepAll: true,
-        reportDir: 'reports',
+        reportDir: 'playwright-report',
         reportFiles: 'index.html',
         reportName: 'Playwright HTML Report'
-      ])
-      publishHTML([
-        allowMissing: true,
-        alwaysLinkToLastBuild: true,
-        keepAll: true,
-        reportDir: 'custom-report',
-        reportFiles: '*.html',
-        reportName: 'Custom Test Report'
       ])
       emailext(
         subject: "Jenkins Build: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${currentBuild.currentResult}",
@@ -104,8 +96,7 @@ pipeline {
             <p><b>Browser:</b> ${params.BROWSER}</p>
             <p>
               <a href="${env.BUILD_URL}">Open Jenkins Build</a> |
-              <a href="${env.BUILD_URL}Playwright_20HTML_20Report">Open Playwright HTML Report</a> |
-              <a href="${env.BUILD_URL}Custom_20Test_20Report">Open Custom Report</a>
+              <a href="${env.BUILD_URL}Playwright_20HTML_20Report">Open Playwright HTML Report</a>
             </p>
         """,
         to: "RECIVER_EMAIL_ADDRESS", //Replace with the recipient's email address
